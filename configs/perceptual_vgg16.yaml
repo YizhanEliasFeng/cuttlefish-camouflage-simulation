@@ -1,0 +1,52 @@
+run_name: perceptual_vgg16
+seed: 42
+device: cpu
+
+image:
+  height: 128
+  width: 128
+  channels: 1
+
+basis:
+  type: random_smooth
+  n_basis: 64
+  low_res: 16
+
+target:
+  type: synthetic_from_basis
+  weight_scale: 1.5
+  seed_offset: 1000
+
+weights:
+  init_scale: 1.0
+  seed_offset: 2000
+
+loss:
+  type: perceptual_mse
+  mse_weight: 0.25
+  perceptual_weight: 1.0
+  perceptual_layers:
+    - relu2_2
+    - relu3_3
+  layer_weights:
+    relu2_2: 0.5
+    relu3_3: 1.0
+  vgg_pretrained: true
+
+optimizer:
+  type: adam
+  learning_rate: 0.05
+  noise_sigma: 0.02
+  noise_decay: 0.99
+
+simulation:
+  steps: 300
+  save_every: 10
+
+visualization:
+  fps: 10
+  cmap: viridis
+
+output:
+  root: outputs/runs
+

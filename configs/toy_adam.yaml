@@ -1,0 +1,43 @@
+run_name: toy_adam
+seed: 42
+device: cpu
+
+image:
+  height: 64
+  width: 64
+  channels: 1
+
+basis:
+  type: random_smooth
+  n_basis: 32
+  low_res: 8
+
+target:
+  type: synthetic_from_basis
+  weight_scale: 1.5
+  seed_offset: 1000
+
+weights:
+  init_scale: 1.0
+  seed_offset: 2000
+
+loss:
+  type: mse
+
+optimizer:
+  type: adam
+  learning_rate: 0.2
+  noise_sigma: 0.0
+  noise_decay: 1.0
+
+simulation:
+  steps: 200
+  save_every: 5
+
+visualization:
+  fps: 12
+  cmap: viridis
+
+output:
+  root: outputs/runs
+

@@ -171,36 +171,85 @@ W = [w_0, w_1, ..., w_T]
 
 如有可用真实轨迹数据，可进一步使用 Dynamic Time Warping，比较模拟轨迹与真实轨迹的形状相似性。
 
-## 7. 初步实验问题
-
-可以围绕以下问题组织实验：
-
-1. 不同学习率是否会改变轨迹的平滑性、收敛速度和稳定性？
-2. Langevin noise 是否会产生更接近真实伪装中的曲折和间歇性轨迹？
-3. basis 数量增加后，皮肤图案空间是否表现出更高维、更复杂的搜索行为？
-4. perceptual loss 与 MSE loss 产生的优化路径是否存在结构差异？
-5. 哪一种控制规则最能同时满足视觉收敛和生物动态可比性？
-
-## 8. 成功标准
-
-项目成功不以模型达到某个固定准确率为标准，而以是否能够形成一套可解释、可复现、可视化的计算建模流程为标准。
-
-最低成功标准：
-
-- 能从随机初始状态生成逐步接近目标背景的虚拟皮肤序列；
-- 能保存完整 activation trajectory；
-- 能绘制 PCA 轨迹；
-- 能比较至少两种优化规则；
-- 能解释参数变化对动态行为的影响。
-
-较高成功标准：
-
-- 引入 VGG16 perceptual loss；
-- 生成多个背景和多个随机初始条件下的稳定实验结果；
-- 对 trajectory curvature、velocity、stagnation 等指标做定量分析；
-- 与真实乌贼轨迹进行 DTW 或其他轨迹形状比较。
-
-## 9. 参考文献
+## 7. 参考文献
 
 - Woo, T., Liang, X., Evans, D. A., et al. (2023). *The dynamics of pattern matching in camouflaging cuttlefish*. Nature, 619, 122–128.
 - Johnson, J., Alahi, A., & Fei-Fei, L. (2016). *Perceptual Losses for Real-Time Style Transfer and Super-Resolution*. ECCV 2016.
+
+## 8. 当前代码实现
+
+当前仓库已经从单文件 demo 扩展为可复现实验框架。核心代码位于 `src/`：
+
+```text
+src/
+├── basis.py          # smooth chromatophore-like basis construction
+├── render.py         # activation vector -> rendered skin
+├── losses.py         # MSE and optional VGG16 perceptual feedback
+├── controllers.py    # Adam, SGD, Langevin-like controllers
+├── simulation.py     # closed-loop simulation and run saving
+├── evaluation.py     # PCA, velocity, path and curvature metrics
+├── visualization.py  # loss/PCA/velocity plots and GIF creation
+├── utils.py
+└── main.py           # command-line entry point
+```
+
+实验配置位于 `configs/`：
+
+- `toy_adam.yaml`
+- `toy_sgd.yaml`
+- `toy_langevin.yaml`
+- `perceptual_vgg16.yaml`
+
+历史原型保留在 `Demo 5.20/520demo.py`，新的可复现实验建议使用 `src.main` 运行。
+
+## 9. 运行方式
+
+安装依赖：
+
+```bash
+pip install -r requirements.txt
+```
+
+运行一个 toy Adam 实验：
+
+```bash
+python -m src.main --config configs/toy_adam.yaml
+```
+
+运行 Langevin-like stochastic controller：
+
+```bash
+python -m src.main --config configs/toy_langevin.yaml
+```
+
+`perceptual_vgg16.yaml` 会使用 `torchvision` 的 VGG16 特征提取器；如果本机没有缓存预训练权重，第一次运行可能需要联网下载模型权重。
+
+覆盖随机种子：
+
+```bash
+python -m src.main --config configs/toy_adam.yaml --seed 123
+```
+
+每次实验会生成一个独立目录：
+
+```text
+outputs/runs/{run_name}_{YYYYMMDD_HHMMSS}_seed{seed}/
+├── config.yaml
+├── metadata.json
+├── basis.pt
+├── weights.npy
+├── losses.csv
+├── velocity.csv
+├── metrics.json
+├── pca_trajectory.npy
+├── target.png
+├── final_skin.png
+├── skin_convergence.gif
+├── frames/
+└── figures/
+    ├── loss_curve.png
+    ├── pca_trajectory.png
+    └── velocity_curve.png
+```
+
+`weights.npy` 保存完整高维 activation trajectory，是后续与 Woo et al. 真实轨迹进行 PCA/DTW/定性比较的主要数据对象。
