@@ -1,4 +1,4 @@
-run_name: perceptual_vgg16
+run_name: dtd_texture_perceptual
 seed: 42
 device: cpu
 
@@ -13,9 +13,8 @@ basis:
   low_res: 16
 
 target:
-  type: synthetic_from_basis
-  weight_scale: 1.5
-  seed_offset: 1000
+  type: image
+  path: data/backgrounds_processed/128_gray/banded/dtd_banded_banded_0002_128_l.png
 
 weights:
   init_scale: 1.0
@@ -34,17 +33,18 @@ loss:
 
 optimizer:
   type: adam
-  learning_rate: 0.05
-  noise_sigma: 0.02
-  noise_decay: 0.99
+  learning_rate: 0.03
+  noise_sigma: 0.0
+  noise_decay: 1.0
 
 simulation:
-  steps: 300
+  steps: 180
   save_every: 10
 
 visualization:
-  fps: 10
+  fps: 12
   cmap: viridis
 
 output:
   root: outputs/runs
+

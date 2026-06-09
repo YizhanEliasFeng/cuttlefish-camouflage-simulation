@@ -199,6 +199,15 @@ src/
 - `toy_sgd.yaml`
 - `toy_langevin.yaml`
 - `perceptual_vgg16.yaml`
+- `dtd_texture_adam.yaml`
+- `dtd_texture_perceptual.yaml`
+- `procedural_checkerboard_langevin.yaml`
+- `procedural_checkerboard_perceptual.yaml`
+- `toy_intermittent_decay.yaml`
+- `toy_intermittent_decay_stochastic.yaml`
+- `dtd_texture_intermittent_mse.yaml`
+- `dtd_texture_intermittent_perceptual.yaml`
+- `procedural_checkerboard_intermittent_perceptual.yaml`
 
 历史原型保留在 `Demo 5.20/520demo.py`，新的可复现实验建议使用 `src.main` 运行。
 
@@ -224,6 +233,46 @@ python -m src.main --config configs/toy_langevin.yaml
 
 `perceptual_vgg16.yaml` 会使用 `torchvision` 的 VGG16 特征提取器；如果本机没有缓存预训练权重，第一次运行可能需要联网下载模型权重。
 
+运行真实纹理背景的 perceptual loss 实验：
+
+```bash
+python -m src.main --config configs/dtd_texture_perceptual.yaml
+```
+
+运行 checkerboard 控制背景的 perceptual loss 实验：
+
+```bash
+python -m src.main --config configs/procedural_checkerboard_perceptual.yaml
+```
+
+当前 perceptual 配置使用冻结 VGG16 的 `relu1_2` 和 `relu2_2` 特征，loss 完全来自特征空间，不再混入像素级 MSE。
+
+运行间歇采样 + 指数衰减反馈 controller：
+
+```bash
+python -m src.main --config configs/toy_intermittent_decay.yaml
+python -m src.main --config configs/dtd_texture_intermittent_perceptual.yaml
+```
+
+该 controller 在采样步计算并缓存视觉梯度，采样间隔内不重新观察梯度，而是使用：
+
+```text
+feedback_gain = exp(-steps_since_sample / decay_tau)
+u_{t+1} = motor_momentum * u_t - learning_rate * feedback_gain * cached_gradient
+w_{t+1} = w_t + u_{t+1} + noise
+```
+
+运行后会额外保存 `feedback.csv`、`feedback_gain.csv` 和 `sample_events.csv`，用于分析反馈输入的衰减与重新激活。
+
+下载和预处理真实/控制背景：
+
+```bash
+.venv/bin/python -m src.download_dtd --output-root data/backgrounds_raw/dtd
+.venv/bin/python -m src.procedural_backgrounds --output data/backgrounds_raw/procedural --size 256
+.venv/bin/python -m src.data_prep --input data/backgrounds_raw/procedural --output data/backgrounds_processed/128_gray --size 128 --source procedural --license generated --manifest data/manifests/procedural_128_gray.csv
+.venv/bin/python -m src.data_prep --input data/backgrounds_raw/dtd/dtd/images --output data/backgrounds_processed/128_gray --size 128 --source dtd --license see_dtd_terms --manifest data/manifests/dtd_128_gray.csv
+```
+
 覆盖随机种子：
 
 ```bash
@@ -244,7 +293,8 @@ outputs/runs/{run_name}_{YYYYMMDD_HHMMSS}_seed{seed}/
 ├── pca_trajectory.npy
 ├── target.png
 ├── final_skin.png
-├── skin_convergence.gif
+├── skin_convergence.gif   # target / current skin / PCA trajectory 三联动态图
+├── skin_only.gif          # 仅皮肤状态变化的辅助 GIF
 ├── frames/
 └── figures/
     ├── loss_curve.png
@@ -253,3 +303,10 @@ outputs/runs/{run_name}_{YYYYMMDD_HHMMSS}_seed{seed}/
 ```
 
 `weights.npy` 保存完整高维 activation trajectory，是后续与 Woo et al. 真实轨迹进行 PCA/DTW/定性比较的主要数据对象。
+`skin_convergence.gif` 会把目标背景、模拟皮肤状态和 PCA 轨迹放在同一张动态图中，便于直接展示反馈优化过程。
+
+如果某些历史 run 缺少 GIF，或者需要强制重绘所有可视化结果：
+
+```bash
+.venv/bin/python -m src.render_visuals --all --force
+```

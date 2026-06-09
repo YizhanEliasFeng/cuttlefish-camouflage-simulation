@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import Mapping, Sequence
+from pathlib import Path
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+_CACHE_ROOT = Path.cwd() / ".cache"
+os.environ.setdefault("TORCH_HOME", str(_CACHE_ROOT / "torch"))
 
 
 VGG16_LAYER_INDICES = {
@@ -129,4 +134,3 @@ def perceptual_loss(
         layer_weight = float(weights.get(layer, 1.0))
         loss = loss + layer_weight * F.mse_loss(skin_features[layer], target_features[layer])
     return loss
-

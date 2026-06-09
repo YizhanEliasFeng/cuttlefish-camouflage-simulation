@@ -1,4 +1,4 @@
-run_name: perceptual_vgg16
+run_name: dtd_texture_intermittent_perceptual
 seed: 42
 device: cpu
 
@@ -13,9 +13,8 @@ basis:
   low_res: 16
 
 target:
-  type: synthetic_from_basis
-  weight_scale: 1.5
-  seed_offset: 1000
+  type: image
+  path: data/backgrounds_processed/128_gray/banded/dtd_banded_banded_0002_128_l.png
 
 weights:
   init_scale: 1.0
@@ -33,17 +32,21 @@ loss:
   vgg_pretrained: true
 
 optimizer:
-  type: adam
-  learning_rate: 0.05
-  noise_sigma: 0.02
-  noise_decay: 0.99
+  type: intermittent_decay
+  learning_rate: 0.015
+  sampling: fixed
+  sample_interval: 8
+  decay_tau: 3.0
+  motor_momentum: 0.65
+  noise_sigma: 0.003
+  noise_decay: 0.995
 
 simulation:
-  steps: 300
-  save_every: 10
+  steps: 1000
+  save_every: 8
 
 visualization:
-  fps: 10
+  fps: 12
   cmap: viridis
 
 output:

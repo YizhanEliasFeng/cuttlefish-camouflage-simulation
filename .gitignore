@@ -12,6 +12,10 @@ env/
 
 outputs/
 results/
+data/backgrounds_raw/
+data/backgrounds_processed/
+data/manifests/*.csv
+data/manifests/*.json
 *.mp4
 *.avi
 *.mov

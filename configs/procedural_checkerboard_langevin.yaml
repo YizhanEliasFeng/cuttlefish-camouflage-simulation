@@ -1,0 +1,42 @@
+run_name: procedural_checkerboard_langevin
+seed: 42
+device: cpu
+
+image:
+  height: 128
+  width: 128
+  channels: 1
+
+basis:
+  type: random_smooth
+  n_basis: 64
+  low_res: 16
+
+target:
+  type: image
+  path: data/backgrounds_processed/128_gray/checkerboard/procedural_checkerboard_checker_016px_128_l.png
+
+weights:
+  init_scale: 1.0
+  seed_offset: 2000
+
+loss:
+  type: mse
+
+optimizer:
+  type: langevin
+  learning_rate: 0.45
+  noise_sigma: 0.08
+  noise_decay: 0.99
+
+simulation:
+  steps: 400
+  save_every: 10
+
+visualization:
+  fps: 12
+  cmap: viridis
+
+output:
+  root: outputs/runs
+

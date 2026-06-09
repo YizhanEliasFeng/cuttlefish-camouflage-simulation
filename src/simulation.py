@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
@@ -77,8 +78,11 @@ def run_simulation(config: dict) -> SimulationResult:
     losses: list[float] = []
 
     for step in range(steps + 1):
-        current_skin = render_skin(weights, basis, activation=render_activation)
-        loss = loss_fn(current_skin)
+        needs_gradient = False if step == steps else controller.wants_gradient(step)
+        grad_context = torch.enable_grad() if needs_gradient else torch.no_grad()
+        with grad_context:
+            current_skin = render_skin(weights, basis, activation=render_activation)
+            loss = loss_fn(current_skin)
 
         weights_history.append(weights.detach().cpu().numpy().copy())
         losses.append(float(loss.detach().cpu().item()))
@@ -90,13 +94,15 @@ def run_simulation(config: dict) -> SimulationResult:
             save_image(current_skin, output_dir / "final_skin.png")
             break
 
-        controller.zero_grad()
-        loss.backward()
+        if needs_gradient:
+            controller.zero_grad()
+            loss.backward()
         controller.step(step)
 
     weights_array = np.asarray(weights_history, dtype=np.float32)
     np.save(output_dir / "weights.npy", weights_array)
     write_losses_csv(losses, output_dir / "losses.csv")
+    _write_feedback_records(controller.feedback_records, output_dir)
     save_json(
         {
             "run_id": output_dir.name,
@@ -111,6 +117,30 @@ def run_simulation(config: dict) -> SimulationResult:
     )
 
     return SimulationResult(output_dir=output_dir, run_id=output_dir.name, weights=weights_array, losses=losses)
+
+
+def _write_feedback_records(records: list[dict[str, float | int]], output_dir: Path) -> None:
+    if not records:
+        return
+
+    combined_path = output_dir / "feedback.csv"
+    fieldnames = ["step", "sample_event", "feedback_gain", "steps_since_sample", "motor_velocity_norm"]
+    with combined_path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(records)
+
+    with (output_dir / "feedback_gain.csv").open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["step", "feedback_gain"])
+        for row in records:
+            writer.writerow([row["step"], f"{float(row['feedback_gain']):.10f}"])
+
+    with (output_dir / "sample_events.csv").open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["step", "sample_event"])
+        for row in records:
+            writer.writerow([row["step"], int(row["sample_event"])])
 
 
 def _create_target(config: dict, basis: torch.Tensor, device: torch.device) -> torch.Tensor:
@@ -193,4 +223,3 @@ def _build_loss_fn(config: dict, target: torch.Tensor, device: torch.device) -> 
         return loss_fn
 
     raise ValueError(f"Unsupported loss type: {loss_type}")
-

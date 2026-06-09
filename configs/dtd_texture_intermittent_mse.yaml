@@ -1,0 +1,45 @@
+run_name: dtd_texture_intermittent_mse
+seed: 42
+device: cpu
+
+image:
+  height: 128
+  width: 128
+  channels: 1
+
+basis:
+  type: random_smooth
+  n_basis: 64
+  low_res: 16
+
+target:
+  type: image
+  path: data/backgrounds_processed/128_gray/banded/dtd_banded_banded_0002_128_l.png
+
+weights:
+  init_scale: 1.0
+  seed_offset: 2000
+
+loss:
+  type: mse
+
+optimizer:
+  type: intermittent_decay
+  learning_rate: 0.045
+  sampling: fixed
+  sample_interval: 8
+  decay_tau: 3.0
+  motor_momentum: 0.7
+  noise_sigma: 0.005
+  noise_decay: 0.995
+
+simulation:
+  steps: 1000
+  save_every: 10
+
+visualization:
+  fps: 12
+  cmap: viridis
+
+output:
+  root: outputs/runs

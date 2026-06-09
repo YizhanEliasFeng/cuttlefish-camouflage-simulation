@@ -1,0 +1,41 @@
+run_name: dtd_texture_adam
+seed: 42
+device: cpu
+
+image:
+  height: 128
+  width: 128
+  channels: 1
+
+basis:
+  type: random_smooth
+  n_basis: 64
+  low_res: 16
+
+target:
+  type: image
+  path: data/backgrounds_processed/128_gray/banded/dtd_banded_banded_0002_128_l.png
+
+weights:
+  init_scale: 1.0
+  seed_offset: 2000
+
+loss:
+  type: mse
+
+optimizer:
+  type: adam
+  learning_rate: 0.08
+  noise_sigma: 0.0
+  noise_decay: 1.0
+
+simulation:
+  steps: 400
+  save_every: 10
+
+visualization:
+  fps: 12
+  cmap: viridis
+
+output:
+  root: outputs/runs

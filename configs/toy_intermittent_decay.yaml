@@ -1,0 +1,46 @@
+run_name: toy_intermittent_decay
+seed: 42
+device: cpu
+
+image:
+  height: 64
+  width: 64
+  channels: 1
+
+basis:
+  type: random_smooth
+  n_basis: 32
+  low_res: 8
+
+target:
+  type: synthetic_from_basis
+  weight_scale: 1.5
+  seed_offset: 1000
+
+weights:
+  init_scale: 1.0
+  seed_offset: 2000
+
+loss:
+  type: mse
+
+optimizer:
+  type: intermittent_decay
+  learning_rate: 0.08
+  sampling: fixed
+  sample_interval: 8
+  decay_tau: 3.0
+  motor_momentum: 0.65
+  noise_sigma: 0.01
+  noise_decay: 0.995
+
+simulation:
+  steps: 1000
+  save_every: 8
+
+visualization:
+  fps: 12
+  cmap: viridis
+
+output:
+  root: outputs/runs

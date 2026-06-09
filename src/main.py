@@ -37,7 +37,8 @@ def main() -> None:
 
     if not args.no_visuals:
         fps = int(config.get("visualization", {}).get("fps", 12))
-        create_run_visualizations(result.output_dir, fps=fps)
+        cmap = str(config.get("visualization", {}).get("cmap", "viridis"))
+        create_run_visualizations(result.output_dir, fps=fps, cmap=cmap)
 
     print(f"Run complete: {Path(result.output_dir).resolve()}")
     print(f"Final loss: {metrics.get('final_loss', float('nan')):.6f}")
@@ -47,4 +48,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
